@@ -17,8 +17,11 @@ You can run both of them via:
 
 ```bash
 cargo run --example simply # or
-cargo run --example verbose
+cargo run --example verbose # or
+cargo run --example threads
 ```
+
+For example:
 
 ```bash
 cargo run --example verbose
