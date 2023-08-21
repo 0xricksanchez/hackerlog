@@ -25,17 +25,17 @@ cargo run --example verbose
    Compiling hackerlog v0.1.0 (/Users/0x434b/Git/private/hackerlog)
     Finished dev [unoptimized + debuginfo] target(s) in 0.22s
      Running `target/debug/examples/verbose`
-[>] (10:36:40) - [PID: 224 | Thread: main] - (src/lib.rs:44) : This is an info message
-[#] (10:36:40) - [PID: 224 | Thread: main] - (src/lib.rs:44) : This is a debug message
-[!] (10:36:40) - [PID: 224 | Thread: main] - (src/lib.rs:44) : This is a warning message
-[x] (10:36:40) - [PID: 224 | Thread: main] - (src/lib.rs:44) : This is an error message
-[+] (10:36:40) - [PID: 224 | Thread: main] - (src/lib.rs:44) : This is a success message
-[-] (10:36:40) - [PID: 224 | Thread: main] - (src/lib.rs:44) : This is a failure message
+[>] (11:48:52) - [PID: 15435 | Thread: main] - (examples/verbose.rs:4) : This is an info message
+[#] (11:48:52) - [PID: 15435 | Thread: main] - (examples/verbose.rs:5) : This is a debug message
+[!] (11:48:52) - [PID: 15435 | Thread: main] - (examples/verbose.rs:6) : This is a warning message
+[x] (11:48:52) - [PID: 15435 | Thread: main] - (examples/verbose.rs:7) : This is an error message
+[+] (11:48:52) - [PID: 15435 | Thread: main] - (examples/verbose.rs:8) : This is a success message
+[-] (11:48:52) - [PID: 15435 | Thread: main] - (examples/verbose.rs:9) : This is a failure message
 ```
 
 ## Usage
 
-Just import `hackerlog` in your application as `use hackerlog::*;` and you have access to the macros:
+Run `cargo add hackerlog` in your project root and just import `hackerlog` in your application as `use hackerlog::*;` and you have access to the macros:
 
 - log_info!
 - log_debug!
