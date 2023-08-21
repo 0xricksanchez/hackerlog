@@ -1,0 +1,13 @@
+[package]
+name = "hackerlog"
+version = "0.1.1"
+edition = "2021"
+license = "MIT"
+authors = ["C.K. <admin@0x434b.dev>"]
+description = "A simple logging tool with no fluff for hackers."
+repository = "https://github.com/0xricksanchez/hackerlog"
+
+
+[dependencies]
+chrono = "0.4.26"
+termion = "2.0.1"
