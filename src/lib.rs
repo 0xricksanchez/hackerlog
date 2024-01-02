@@ -70,73 +70,63 @@ pub fn log<T: std::fmt::Display>(
 }
 
 #[macro_export]
-macro_rules! log_info {
-    ($message:expr, verbose) => {
-        $crate::log(&$crate::LogLevel::INFO, true, $message, file!(), line!());
+macro_rules! log {
+    // Match a simple message without verbose
+    ($level:expr, $msg:expr) => {
+        $crate::log(&$level, false, $msg.to_string(), file!(), line!());
     };
-    ($message:expr) => {
-        $crate::log(&$crate::LogLevel::INFO, false, $message, file!(), line!());
+    // Match a formatted message (one or more args) without verbose
+    ($level:expr, $fmt:expr, $($arg:tt)+) => {
+        $crate::log(&$level, false, format!($fmt, $($arg)+), file!(), line!());
+    };
+    // Match a simple message with verbose
+    ($level:expr, verbose => $msg:expr) => {
+        $crate::log(&$level, true, $msg.to_string(), file!(), line!());
+    };
+    // Match a formatted message (one or more args) with verbose
+    ($level:expr, verbose => $fmt:expr, $($arg:tt)+) => {
+        $crate::log(&$level, true, format!($fmt, $($arg)+), file!(), line!());
     };
 }
 
 #[macro_export]
-macro_rules! log_debug {
-    ($message:expr, verbose) => {
-        $crate::log(&$crate::LogLevel::DEBUG, true, $message, file!(), line!());
+macro_rules! log_info {
+    ($($arg:tt)*) => {
+        log!($crate::LogLevel::INFO, $($arg)*);
     };
-    ($message:expr) => {
-        $crate::log(&$crate::LogLevel::DEBUG, false, $message, file!(), line!());
+}
+
+#[macro_export]
+macro_rules! log_dbg {
+    ($($arg:tt)*) => {
+        log!($crate::LogLevel::DEBUG, $($arg)*);
     };
 }
 
 #[macro_export]
 macro_rules! log_warn {
-    ($message:expr, verbose) => {
-        $crate::log(&$crate::LogLevel::WARN, true, $message, file!(), line!());
-    };
-    ($message:expr) => {
-        $crate::log(&$crate::LogLevel::WARN, false, $message, file!(), line!());
+    ($($arg:tt)*) => {
+        log!($crate::LogLevel::WARN, $($arg)*);
     };
 }
 
 #[macro_export]
 macro_rules! log_err {
-    ($message:expr, verbose) => {
-        $crate::log(&$crate::LogLevel::ERROR, true, $message, file!(), line!());
-    };
-    ($message:expr) => {
-        $crate::log(&$crate::LogLevel::ERROR, false, $message, file!(), line!());
+    ($($arg:tt)*) => {
+        log!($crate::LogLevel::ERROR, $($arg)*);
     };
 }
 
 #[macro_export]
 macro_rules! log_success {
-    ($message:expr, verbose) => {
-        $crate::log(&$crate::LogLevel::SUCCESS, true, $message, file!(), line!());
-    };
-    ($message:expr) => {
-        $crate::log(
-            &$crate::LogLevel::SUCCESS,
-            false,
-            $message,
-            file!(),
-            line!(),
-        );
+    ($($arg:tt)*) => {
+        log!($crate::LogLevel::SUCCESS, $($arg)*);
     };
 }
 
 #[macro_export]
 macro_rules! log_fail {
-    ($message:expr, verbose) => {
-        $crate::log(&$crate::LogLevel::FAILURE, true, $message, file!(), line!());
-    };
-    ($message:expr) => {
-        $crate::log(
-            &$crate::LogLevel::FAILURE,
-            false,
-            $message,
-            file!(),
-            line!(),
-        );
+    ($($arg:tt)*) => {
+        log!($crate::LogLevel::FAILURE, $($arg)*);
     };
 }
