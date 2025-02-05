@@ -92,41 +92,41 @@ macro_rules! log {
 #[macro_export]
 macro_rules! log_info {
     ($($arg:tt)*) => {
-        log!($crate::LogLevel::INFO, $($arg)*);
+        $crate::log!($crate::LogLevel::INFO, $($arg)*);
     };
 }
 
 #[macro_export]
 macro_rules! log_dbg {
     ($($arg:tt)*) => {
-        log!($crate::LogLevel::DEBUG, $($arg)*);
+        $crate::log!($crate::LogLevel::DEBUG, $($arg)*);
     };
 }
 
 #[macro_export]
 macro_rules! log_warn {
     ($($arg:tt)*) => {
-        log!($crate::LogLevel::WARN, $($arg)*);
+        $crate::log!($crate::LogLevel::WARN, $($arg)*);
     };
 }
 
 #[macro_export]
 macro_rules! log_err {
     ($($arg:tt)*) => {
-        log!($crate::LogLevel::ERROR, $($arg)*);
+        $crate::log!($crate::LogLevel::ERROR, $($arg)*);
     };
 }
 
 #[macro_export]
 macro_rules! log_success {
     ($($arg:tt)*) => {
-        log!($crate::LogLevel::SUCCESS, $($arg)*);
+        $crate::log!($crate::LogLevel::SUCCESS, $($arg)*);
     };
 }
 
 #[macro_export]
 macro_rules! log_fail {
     ($($arg:tt)*) => {
-        log!($crate::LogLevel::FAILURE, $($arg)*);
+        $crate::log!($crate::LogLevel::FAILURE, $($arg)*);
     };
 }
