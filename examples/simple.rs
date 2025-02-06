@@ -15,4 +15,3 @@ fn main() {
     success!("This is a success message");
     failure!("This is a failure message");
 }
-

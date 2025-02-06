@@ -33,4 +33,3 @@ pub mod structured {
         }
     }
 }
-
