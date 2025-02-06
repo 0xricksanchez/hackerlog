@@ -1,9 +1,9 @@
 [package]
 name = "hackerlog"
-version = "0.1.4"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
-authors = ["C.K. <admin@0x434b.dev>"]
+authors = ["C.K. <mail@0x434b.dev>"]
 description = "A simple logging tool with no fluff for hackers."
 repository = "https://github.com/0xricksanchez/hackerlog"
 
@@ -11,3 +11,10 @@ repository = "https://github.com/0xricksanchez/hackerlog"
 [dependencies]
 chrono = "0.4.39"
 termion = "4.0.3"
+serde = { version = "1.0.217", features = ["derive"], optional = true }
+serde_json = { version = "1.0.138", optional = true }
+
+[features]
+default = []
+# Enable with --features structured
+structured = ["dep:serde", "dep:serde_json"]
