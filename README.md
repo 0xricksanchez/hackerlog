@@ -18,7 +18,12 @@ You can run both of them via:
 ```bash
 cargo run --example simply # or
 cargo run --example verbose # or
-cargo run --example threads
+cargo run --example threads # or
+cargo run --example filtering # or
+cargo run --example output_redirection # or
+cargo run --example context # or
+cargo run --example thread_safety # or
+cargo run --example progress # or
 ```
 
 For example:
@@ -40,9 +45,9 @@ cargo run --example verbose
 
 Run `cargo add hackerlog` in your project root and just import `hackerlog` in your application as `use hackerlog::*;` and you have access to the macros:
 
-- log_info!
-- log_debug!
-- log_warn!
-- log_err!
-- log_success!
-- log_fail!
+- info!
+- debug!
+- warn!
+- err!
+- success!
+- fail!
