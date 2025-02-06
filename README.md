@@ -24,6 +24,8 @@ cargo run --example output_redirection # or
 cargo run --example context # or
 cargo run --example thread_safety # or
 cargo run --example progress # or
+cargo run --example custom_format # or
+cargo run --example structured
 ```
 
 For example:

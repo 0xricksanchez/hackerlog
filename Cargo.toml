@@ -11,3 +11,12 @@ repository = "https://github.com/0xricksanchez/hackerlog"
 [dependencies]
 chrono = "0.4.39"
 termion = "4.0.3"
+
+# Optional dependencies for structured logging
+serde = { version = "1.0.217", features = ["derive"], optional = true }
+serde_json = { version = "1.0.138", optional = true }
+
+
+[features]
+default = []
+structured = ["dep:serde", "dep:serde_json"] # Enable with --features structured

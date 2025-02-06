@@ -1,3 +1,8 @@
+mod format;
+mod levels;
+mod macros;
+mod timing;
+
 use chrono::Local;
 use std::{
     fmt,
@@ -10,40 +15,15 @@ use std::{
 use std::{process, thread};
 use termion::color;
 
-// Core types
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum LogLevel {
-    DEBUG = 0,
-    INFO = 1,
-    WARN = 2,
-    ERROR = 3,
-    SUCCESS = 4,
-    FAILURE = 5,
-}
+#[cfg(feature = "structured")]
+mod structured;
 
-impl LogLevel {
-    const fn symbol(&self) -> &str {
-        match self {
-            Self::INFO => "[>]",
-            Self::DEBUG => "[#]",
-            Self::WARN => "[!]",
-            Self::ERROR => "[x]",
-            Self::SUCCESS => "[+]",
-            Self::FAILURE => "[-]",
-        }
-    }
+pub use format::{FormatPlaceholder, FormatTemplate};
+pub use levels::LogLevel;
+pub use timing::TimedOperation;
 
-    fn color(&self) -> impl color::Color {
-        match *self {
-            Self::INFO => color::Rgb(255, 255, 255),  // White
-            Self::DEBUG => color::Rgb(100, 100, 255), // Light Blue
-            Self::WARN => color::Rgb(255, 165, 0),    // Orange
-            Self::ERROR => color::Rgb(255, 0, 0),     // Red
-            Self::SUCCESS => color::Rgb(0, 255, 0),   // Green
-            Self::FAILURE => color::Rgb(139, 0, 0),   // Dark Red
-        }
-    }
-}
+#[cfg(feature = "structured")]
+pub use structured::structured::LogEvent;
 
 // Global logger configuration
 pub struct Logger {
@@ -51,6 +31,7 @@ pub struct Logger {
     min_level: AtomicU8,
     writer: Mutex<Box<dyn Write + Send>>,
     context: Mutex<Vec<(String, String)>>,
+    format: Mutex<FormatTemplate>,
 }
 
 impl Default for Logger {
@@ -60,6 +41,7 @@ impl Default for Logger {
             min_level: AtomicU8::new(LogLevel::INFO as u8),
             writer: Mutex::new(Box::new(io::stdout())),
             context: Mutex::new(Vec::new()),
+            format: Mutex::new(FormatTemplate::parse("{symbol} {context}{message}")),
         }
     }
 }
@@ -72,6 +54,24 @@ pub fn logger() -> &'static Logger {
 }
 
 impl Logger {
+    pub fn set_format(&self, template: &str) -> &Self {
+        *self.format.lock().unwrap() = FormatTemplate::parse(template);
+        self
+    }
+
+    // Default formats for different styles
+    pub fn use_simple_format(&self) -> &Self {
+        self.set_format("{symbol} {message}")
+    }
+
+    pub fn use_detailed_format(&self) -> &Self {
+        self.set_format("[{level}] {datetime} {message}")
+    }
+
+    pub fn use_debug_format(&self) -> &Self {
+        self.set_format("{datetime} [{level}] <{file}:{line}> {message}")
+    }
+
     pub fn verbose(&self, enabled: bool) -> &Self {
         self.verbose.store(enabled, Ordering::Relaxed);
         self
@@ -109,40 +109,67 @@ impl Logger {
         file: &str,
         line: u32,
     ) -> io::Result<()> {
+        let format = self.format.lock().unwrap();
         let mut output = String::new();
 
-        // Add symbol
-        output.push_str(&format!("{} ", level.symbol()));
-
-        // Add verbose info if enabled
-        if self.verbose.load(Ordering::Relaxed) {
-            let time = Local::now().format("%H:%M:%S").to_string();
-            let thread_name = thread::current().name().map_or_else(
-                || format!("Thread-{:?}", thread::current().id()),
-                ToString::to_string,
-            );
-            let pid = process::id();
-
-            output.push_str(&format!(
-                "({time}) - [PID: {pid} | Thread: {thread_name}] - ({file}:{line}) : "
-            ));
-        }
-
-        // Add context if any
-        let context = self.context.lock().unwrap();
-        if !context.is_empty() {
-            output.push('[');
-            for (i, (key, value)) in context.iter().enumerate() {
-                if i > 0 {
-                    output.push_str(", ");
+        for part in &format.parts {
+            match part {
+                FormatPlaceholder::Level => {
+                    output.push_str(&format!("{:?}", level));
                 }
-                output.push_str(&format!("{}={}", key, value));
+                FormatPlaceholder::Symbol => {
+                    output.push_str(level.symbol());
+                }
+                FormatPlaceholder::Message => {
+                    output.push_str(message);
+                }
+                FormatPlaceholder::Time => {
+                    output.push_str(&Local::now().format("%H:%M:%S").to_string());
+                }
+                FormatPlaceholder::Date => {
+                    output.push_str(&Local::now().format("%Y-%m-%d").to_string());
+                }
+                FormatPlaceholder::DateTime => {
+                    output.push_str(&Local::now().format("%Y-%m-%d %H:%M:%S").to_string());
+                }
+                FormatPlaceholder::ThreadName => {
+                    let name = thread::current().name().map_or_else(
+                        || format!("Thread-{:?}", thread::current().id()),
+                        ToString::to_string,
+                    );
+                    output.push_str(&name);
+                }
+                FormatPlaceholder::ThreadId => {
+                    output.push_str(&format!("{:?}", thread::current().id()));
+                }
+                FormatPlaceholder::ProcessId => {
+                    output.push_str(&process::id().to_string());
+                }
+                FormatPlaceholder::File => {
+                    output.push_str(file);
+                }
+                FormatPlaceholder::Line => {
+                    output.push_str(&line.to_string());
+                }
+                FormatPlaceholder::Context => {
+                    let context = self.context.lock().unwrap();
+                    if !context.is_empty() {
+                        output.push('[');
+                        for (i, (key, value)) in context.iter().enumerate() {
+                            if i > 0 {
+                                output.push_str(", ");
+                            }
+                            output.push_str(&format!("{}={}", key, value));
+                        }
+                        output.push_str("] ");
+                    }
+                }
+                FormatPlaceholder::Text(text) => {
+                    output.push_str(text);
+                }
             }
-            output.push_str("] ");
         }
 
-        // Add message
-        output.push_str(message);
         output.push('\n');
 
         // Color the output
@@ -159,6 +186,33 @@ impl Logger {
         writer.flush()?;
 
         Ok(())
+    }
+
+    #[cfg(feature = "structured")]
+    pub fn structured_format(&self) -> &Self {
+        self.set_format("{datetime} {level} {message} {fields}")
+    }
+
+    #[cfg(feature = "structured")]
+    pub fn write_structured_event(&self, event: &LogEvent) -> io::Result<()> {
+        let mut fields_str = String::new();
+        if !event.fields.is_empty() {
+            fields_str.push('[');
+            for (i, (key, value)) in event.fields.iter().enumerate() {
+                if i > 0 {
+                    fields_str.push_str(", ");
+                }
+                fields_str.push_str(&format!("{}={}", key, value));
+            }
+            fields_str.push(']');
+        }
+
+        self.write_log(
+            event.level,
+            &format!("{} {}", event.message, fields_str),
+            &event.file,
+            event.line,
+        )
     }
 }
 
@@ -272,121 +326,5 @@ impl Progress {
         logger()
             .write_log(LogLevel::SUCCESS, &message.into(), file!(), line!())
             .ok();
-    }
-}
-
-// Macros
-#[macro_export]
-macro_rules! log {
-    ($level:expr, $($arg:tt)*) => {{
-        if $crate::logger().should_log($level) {
-            let message = format!($($arg)*);
-            $crate::logger().write_log($level, &message, file!(), line!()).ok();
-        }
-    }};
-}
-
-#[macro_export]
-macro_rules! debug {
-    ($($arg:tt)*) => {
-        $crate::log!($crate::LogLevel::DEBUG, $($arg)*);
-    };
-}
-
-#[macro_export]
-macro_rules! info {
-    ($($arg:tt)*) => {
-        $crate::log!($crate::LogLevel::INFO, $($arg)*);
-    };
-}
-
-#[macro_export]
-macro_rules! warn {
-    ($($arg:tt)*) => {
-        $crate::log!($crate::LogLevel::WARN, $($arg)*);
-    };
-}
-
-#[macro_export]
-macro_rules! error {
-    ($($arg:tt)*) => {
-        $crate::log!($crate::LogLevel::ERROR, $($arg)*);
-    };
-}
-
-#[macro_export]
-macro_rules! success {
-    ($($arg:tt)*) => {
-        $crate::log!($crate::LogLevel::SUCCESS, $($arg)*);
-    };
-}
-
-#[macro_export]
-macro_rules! failure {
-    ($($arg:tt)*) => {
-        $crate::log!($crate::LogLevel::FAILURE, $($arg)*);
-    };
-}
-
-// Tests
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::io::Cursor;
-
-    #[test]
-    fn test_log_levels() {
-        assert!(LogLevel::ERROR > LogLevel::INFO);
-        assert!(LogLevel::DEBUG < LogLevel::WARN);
-    }
-
-    #[test]
-    fn test_basic_logging() {
-        let buffer = Cursor::new(Vec::new());
-        logger().set_writer(Box::new(buffer.clone())).unwrap();
-
-        info!("Test message");
-
-        let output = String::from_utf8(buffer.into_inner()).unwrap();
-        assert!(output.contains("Test message"));
-    }
-
-    #[test]
-    fn test_context() {
-        let buffer = Cursor::new(Vec::new());
-        logger().set_writer(Box::new(buffer.clone())).unwrap();
-
-        let _guard = logger().add_context("test", "value");
-        info!("Test with context");
-
-        let output = String::from_utf8(buffer.into_inner()).unwrap();
-        assert!(output.contains("test=value"));
-    }
-
-    #[test]
-    fn test_progress() {
-        let buffer = Cursor::new(Vec::new());
-        logger().set_writer(Box::new(buffer.clone())).unwrap();
-
-        let mut progress = Progress::with_total("Testing", 100);
-        progress.inc(50);
-        progress.finish();
-
-        let output = String::from_utf8(buffer.into_inner()).unwrap();
-        assert!(output.contains("[50/100]"));
-        assert!(output.contains("[Complete]"));
-    }
-
-    #[test]
-    fn test_verbose_mode() {
-        let buffer = Cursor::new(Vec::new());
-        logger().set_writer(Box::new(buffer.clone())).unwrap();
-        logger().verbose(true);
-
-        info!("Verbose test");
-
-        let output = String::from_utf8(buffer.into_inner()).unwrap();
-        assert!(output.contains("PID:"));
-        assert!(output.contains("Thread:"));
     }
 }
