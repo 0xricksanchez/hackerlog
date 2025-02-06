@@ -190,7 +190,7 @@ impl Logger {
 
     #[cfg(feature = "structured")]
     pub fn structured_format(&self) -> &Self {
-        self.set_format("{datetime} {level} {message} {fields}")
+        self.set_format("{datetime} {level} {message}")
     }
 
     #[cfg(feature = "structured")]
@@ -209,7 +209,11 @@ impl Logger {
 
         self.write_log(
             event.level,
-            &format!("{} {}", event.message, fields_str),
+            &if fields_str.is_empty() {
+                event.message.clone()
+            } else {
+                format!("{} {}", event.message, fields_str)
+            },
             &event.file,
             event.line,
         )
