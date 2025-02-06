@@ -14,7 +14,6 @@ termion = "4.0.3"
 serde = { version = "1.0.217", features = ["derive"], optional = true }
 serde_json = { version = "1.0.138", optional = true }
 
-
 [features]
 default = []
 # Enable with --features structured
